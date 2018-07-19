@@ -102,6 +102,11 @@ func init() {
     return NewParallelNodeBounded(children, minSuccess, minFail)
   }
 
+  NodeTypeRegister["Inverter"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    child, _ := MakeNode(root.Child, nodes)
+    return NewInverterNode(child)
+  }
+
   NodeTypeRegister["Repeat"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
     child, _ := MakeNode(root.Child, nodes)
     //TODO extract limit if provided
