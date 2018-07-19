@@ -121,6 +121,13 @@ func TestInverter(t *testing.T) {
   expectSequence(t, n, expected)
 }
 
+func TestRepeater(t *testing.T) {
+  seq := []Status{Success}
+  n := NewRepeaterNode(2, NewArrayLeafNode(t, "rep", seq))
+  expected := []Status{Running, Running, Success}
+  expectSequence(t, n, expected)
+}
+
 func TestTimeout(t *testing.T) {
   seq := []Status{Running}
   n := NewTimeoutNode(NewArrayLeafNode(t, "tout", seq), time.Millisecond)

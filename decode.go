@@ -27,17 +27,6 @@ type ProjectNode struct {
 
 var NodeTypeRegister = make(map[string]func(ProjectNode, map[string]ProjectNode)Node)
 
-func init() {
-  NodeTypeRegister["Priority"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
-    children := make([]Node, len(root.Children))
-    for idx, child := range root.Children {
-      fmt.Printf("Making %s\n", child)
-      children[idx], _ = MakeNode(child, nodes)
-    }
-    return NewSelectorNode(children)
-  }
-}
-
 func ReadProject(file io.Reader) (*Project, error) {
   var pr Project
   dec := json.NewDecoder(file)
@@ -68,3 +57,43 @@ func MakeNode(root string, nodes map[string]ProjectNode) (Node, bool) {
     return NewConstantNode(Failure), false
   }
 }
+
+func init() {
+  NodeTypeRegister["Priority"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    children := make([]Node, len(root.Children))
+    for idx, child := range root.Children {
+      children[idx], _ = MakeNode(child, nodes)
+    }
+    return NewSelectorNode(children)
+  }
+
+  NodeTypeRegister["MemPriority"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    children := make([]Node, len(root.Children))
+    for idx, child := range root.Children {
+      children[idx], _ = MakeNode(child, nodes)
+    }
+    return NewSelectorMemoryNode(children)
+  }
+
+  NodeTypeRegister["Sequence"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    children := make([]Node, len(root.Children))
+    for idx, child := range root.Children {
+      children[idx], _ = MakeNode(child, nodes)
+    }
+    return NewSequentialNode(children)
+  }
+
+  NodeTypeRegister["MemSequence"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    children := make([]Node, len(root.Children))
+    for idx, child := range root.Children {
+      children[idx], _ = MakeNode(child, nodes)
+    }
+    return NewSequentialMemoryNode(children)
+  }
+
+  NodeTypeRegister["Repeat"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    child, _ := MakeNode(root.Child, nodes)
+    return NewRepeaterNode(-1, child)
+  }
+}
+

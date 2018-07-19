@@ -33,6 +33,34 @@ func NewInverterNode(child Node) *InverterNode {
   return n
 }
 
+// Runs the child until completion
+type RepeaterNode struct {
+  BasicNode
+  Decorator
+  counter int
+  limit int
+}
+
+func (n *RepeaterNode) Initiate() {
+  n.counter = 0
+}
+
+func (n *RepeaterNode) Update() {
+  Tick(n.child)
+  if n.limit > 0 && n.counter < n.limit {
+    n.status = Running
+  } else {
+    n.status = Success
+  }
+  n.counter++
+}
+
+func NewRepeaterNode(limit int, child Node) *RepeaterNode {
+  n := new(RepeaterNode)
+  n.child = child
+  n.limit = limit
+  return n
+}
 type TimeoutNode struct {
   BasicNode
   Decorator
