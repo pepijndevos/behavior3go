@@ -128,6 +128,20 @@ func TestRepeater(t *testing.T) {
   expectSequence(t, n, expected)
 }
 
+func TestUntilSuccess(t *testing.T) {
+  seq := []Status{Failure, Failure, Success}
+  n := NewUntilSuccessNode(NewArrayLeafNode(t, "suc", seq))
+  expected := []Status{Running, Running, Success}
+  expectSequence(t, n, expected)
+}
+
+func TestUntilFailure(t *testing.T) {
+  seq := []Status{Success, Success, Failure}
+  n := NewUntilFailureNode(NewArrayLeafNode(t, "fail", seq))
+  expected := []Status{Running, Running, Success}
+  expectSequence(t, n, expected)
+}
+
 func TestTimeout(t *testing.T) {
   seq := []Status{Running}
   n := NewTimeoutNode(NewArrayLeafNode(t, "tout", seq), time.Millisecond)

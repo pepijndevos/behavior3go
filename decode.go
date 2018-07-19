@@ -91,9 +91,32 @@ func init() {
     return NewSequentialMemoryNode(children)
   }
 
+  NodeTypeRegister["ParallelSequence"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    children := make([]Node, len(root.Children))
+    for idx, child := range root.Children {
+      children[idx], _ = MakeNode(child, nodes)
+    }
+    // This WILL panic if you don't set bounds
+    minSuccess := int(root.Properties["minSuccess"].(float64))
+    minFail    := int(root.Properties["minFail"].(float64))
+    return NewParallelNodeBounded(children, minSuccess, minFail)
+  }
+
   NodeTypeRegister["Repeat"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
     child, _ := MakeNode(root.Child, nodes)
+    //TODO extract limit if provided
+    fmt.Println("repeat", root.Properties)
     return NewRepeaterNode(-1, child)
+  }
+
+  NodeTypeRegister["RepeatUntilSuccess"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    child, _ := MakeNode(root.Child, nodes)
+    return NewUntilSuccessNode(child)
+  }
+
+  NodeTypeRegister["RepeatUntilFailure"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
+    child, _ := MakeNode(root.Child, nodes)
+    return NewUntilFailureNode(child)
   }
 }
 

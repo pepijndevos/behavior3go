@@ -33,7 +33,7 @@ func NewInverterNode(child Node) *InverterNode {
   return n
 }
 
-// Runs the child until completion
+// Runs the child until limit is reached
 type RepeaterNode struct {
   BasicNode
   Decorator
@@ -61,6 +61,49 @@ func NewRepeaterNode(limit int, child Node) *RepeaterNode {
   n.limit = limit
   return n
 }
+
+// Repeat Until Success
+type UntilSuccessNode struct {
+  BasicNode
+  Decorator
+}
+
+func (n *UntilSuccessNode) Update() {
+  status := Tick(n.child)
+  if status == Success {
+    n.status = Success
+  } else {
+    n.status = Running
+  }
+}
+
+func NewUntilSuccessNode(child Node) *UntilSuccessNode {
+  n := new(UntilSuccessNode)
+  n.child = child
+  return n
+}
+
+// Repeat Until Failure
+type UntilFailureNode struct {
+  BasicNode
+  Decorator
+}
+
+func (n *UntilFailureNode) Update() {
+  status := Tick(n.child)
+  if status == Failure {
+    n.status = Success
+  } else {
+    n.status = Running
+  }
+}
+
+func NewUntilFailureNode(child Node) *UntilFailureNode {
+  n := new(UntilFailureNode)
+  n.child = child
+  return n
+}
+
 type TimeoutNode struct {
   BasicNode
   Decorator
