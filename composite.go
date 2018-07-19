@@ -12,10 +12,10 @@ func (n *CompositeNode) Terminate() {
 }
 
 // Generic function for (memory) sequential an selector nodes
-func compositeUpdate(n *CompositeNode, currentIndex int , nextCondition Status, endCondition Status) (Status, int) {
+func compositeUpdate(n *CompositeNode, currentIndex int, endCondition Status) (Status, int) {
   for ; currentIndex<len(n.children); currentIndex++ {
     status := Tick(n.children[currentIndex])
-    if status == nextCondition {
+    if status == endCondition {
       continue
     } else {
       return status, currentIndex
@@ -30,7 +30,7 @@ type SelectorNode struct {
 }
 
 func (n *SelectorNode) Update() {
-  n.status, _ = compositeUpdate(&n.CompositeNode, 0, Failure, Failure)
+  n.status, _ = compositeUpdate(&n.CompositeNode, 0, Failure)
 }
 
 // Create a new selector node with the given children
@@ -46,7 +46,7 @@ type SequentialNode struct {
 }
 
 func (n *SequentialNode) Update() {
-  n.status, _ = compositeUpdate(&n.CompositeNode, 0, Success, Success)
+  n.status, _ = compositeUpdate(&n.CompositeNode, 0, Success)
 }
 
 // Create a new sequential node with the given children
@@ -128,7 +128,7 @@ type SequentialMemoryNode struct {
 }
 
 func (n *SequentialMemoryNode) Update() {
-  n.status, n.currentIndex = compositeUpdate(&n.CompositeNode, n.currentIndex, Success, Success)
+  n.status, n.currentIndex = compositeUpdate(&n.CompositeNode, n.currentIndex, Success)
 }
 
 // Create a new sequential memory node with the given children
@@ -145,7 +145,7 @@ type SelectorMemoryNode struct {
 }
 
 func (n *SelectorMemoryNode) Update() {
-  n.status, n.currentIndex = compositeUpdate(&n.CompositeNode, n.currentIndex, Failure, Failure)
+  n.status, n.currentIndex = compositeUpdate(&n.CompositeNode, n.currentIndex, Failure)
 }
 
 // Create a new selector node with the given children
