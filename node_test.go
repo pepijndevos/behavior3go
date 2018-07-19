@@ -2,6 +2,7 @@ package behaviortree
 
 import (
   "testing"
+  "time"
 )
 
 // A debugging node that returns a fixed sequence of statusses
@@ -39,7 +40,6 @@ func expectSequence(t *testing.T, node Node, statuses[]Status) {
     }
   }
 }
-
 
 func TestConstant(t *testing.T) {
   n := NewConstantNode(Success)
@@ -111,5 +111,22 @@ func TestSelectorMemory(t *testing.T) {
   n := NewSelectorMemoryNode(ch)
 
   expected := []Status{Running, Success, Running, Success, Running, Success}
+  expectSequence(t, n, expected)
+}
+
+func TestInverter(t *testing.T) {
+  seq := []Status{Running, Success, Failure}
+  n := NewInverterNode(NewArrayLeafNode(t, "inv", seq))
+  expected := []Status{Running, Failure, Success}
+  expectSequence(t, n, expected)
+}
+
+func TestTimeout(t *testing.T) {
+  seq := []Status{Running}
+  n := NewTimeoutNode(NewArrayLeafNode(t, "tout", seq), time.Millisecond)
+  expected := []Status{Running, Running}
+  expectSequence(t, n, expected)
+  time.Sleep(time.Millisecond)
+  expected = []Status{Failure, Running}
   expectSequence(t, n, expected)
 }
