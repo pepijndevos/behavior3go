@@ -79,45 +79,26 @@ func NewRepeaterNode(limit int, child Node) *RepeaterNode {
   return n
 }
 
-// Repeat Until Success
-type UntilSuccessNode struct {
+// Repeat Until the given status
+type RepeatUntilNode struct {
   BasicNode
   Decorator
+  until Status
 }
 
-func (n *UntilSuccessNode) Update() {
+func (n *RepeatUntilNode) Update() {
   status := Tick(n.child)
-  if status == Success {
+  if status == n.until {
     n.status = Success
   } else {
     n.status = Running
   }
 }
 
-func NewUntilSuccessNode(child Node) *UntilSuccessNode {
-  n := new(UntilSuccessNode)
+func NewRepeatUntilNode(until Status, child Node) *RepeatUntilNode {
+  n := new(RepeatUntilNode)
   n.child = child
-  return n
-}
-
-// Repeat Until Failure
-type UntilFailureNode struct {
-  BasicNode
-  Decorator
-}
-
-func (n *UntilFailureNode) Update() {
-  status := Tick(n.child)
-  if status == Failure {
-    n.status = Success
-  } else {
-    n.status = Running
-  }
-}
-
-func NewUntilFailureNode(child Node) *UntilFailureNode {
-  n := new(UntilFailureNode)
-  n.child = child
+  n.until = until
   return n
 }
 

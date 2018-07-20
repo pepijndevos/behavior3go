@@ -190,14 +190,14 @@ func TestRepeater(t *testing.T) {
 
 func TestUntilSuccess(t *testing.T) {
   seq := []Status{Failure, Failure, Success}
-  n := NewUntilSuccessNode(NewArrayLeafNode(t, "suc", seq))
+  n := NewRepeatUntilNode(Success, NewArrayLeafNode(t, "suc", seq))
   expected := []Status{Running, Running, Success}
   expectSequence(t, n, expected)
 }
 
 func TestUntilFailure(t *testing.T) {
   seq := []Status{Success, Success, Failure}
-  n := NewUntilFailureNode(NewArrayLeafNode(t, "fail", seq))
+  n := NewRepeatUntilNode(Failure, NewArrayLeafNode(t, "fail", seq))
   expected := []Status{Running, Running, Success}
   expectSequence(t, n, expected)
 }

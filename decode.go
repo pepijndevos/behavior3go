@@ -139,12 +139,12 @@ func init() {
 
   NodeTypeRegister["RepeatUntilSuccess"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
     child, _ := MakeNode(root.Child, nodes)
-    return NewUntilSuccessNode(child)
+    return NewRepeatUntilNode(Success, child)
   }
 
   NodeTypeRegister["RepeatUntilFailure"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
     child, _ := MakeNode(root.Child, nodes)
-    return NewUntilFailureNode(child)
+    return NewRepeatUntilNode(Failure, child)
   }
 
   // Utility nodes
