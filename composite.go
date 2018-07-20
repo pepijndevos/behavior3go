@@ -113,6 +113,77 @@ func NewParallelNodeAll(children[]Node, successOnAll bool, failOnAll bool) *Para
   return n
 }
 
+// A node that runs all children
+// Completed children are not re-run
+// Success or Failure is defined by
+// the number of children that fail or succeed
+type ParallelMemoryNode struct {
+  ParallelNode
+  completed []bool
+  totalFailures int
+  totalSuccesses int
+}
+
+func (n *ParallelMemoryNode) Initiate() {
+  for i := range n.completed {
+    n.completed[i] = false
+  }
+  n.totalFailures = 0
+  n.totalSuccesses = 0
+}
+
+func (n *ParallelMemoryNode) Update() {
+  for i, child := range n.children {
+    if !n.completed[i] {
+      status := Tick(child)
+      if status != Running {
+        n.completed[i] = true
+      }
+      if status == Success {
+        n.totalSuccesses++
+      } else if status == Failure {
+        n.totalFailures++
+      }
+    }
+  }
+  if n.totalSuccesses >= n.minimumSuccesses {
+    n.status = Success;
+  } else if n.totalFailures >= n.minimumFailures {
+    n.status = Failure;
+  } else {
+    n.status = Running
+  }
+}
+
+// Create a new parallel node with the given children
+// minSucc and minFail set the boundaries for success/failure of this node
+func NewParallelMemoryNodeBounded(children[]Node, minSucc int, minFail int) *ParallelMemoryNode{
+  n := new(ParallelMemoryNode)
+  n.children = children
+  n.completed = make([]bool, len(children))
+  n.minimumSuccesses = minSucc
+  n.minimumFailures = minFail
+  return n
+}
+
+// Create a new parallel node with the given children
+// success or failure is either triggered by one or all nodes
+func NewParallelMemoryNodeAll(children[]Node, successOnAll bool, failOnAll bool) *ParallelMemoryNode{
+  n := new(ParallelMemoryNode)
+  n.children = children
+  n.completed = make([]bool, len(children))
+  if successOnAll {
+    n.minimumSuccesses = len(children)
+  } else {
+    n.minimumSuccesses = 1
+  }
+  if failOnAll {
+    n.minimumFailures = len(children)
+  } else {
+    n.minimumFailures = 1
+  }
+  return n
+}
 type MemoryNode struct {
   currentIndex int
 }

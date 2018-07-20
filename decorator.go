@@ -33,6 +33,23 @@ func NewInverterNode(child Node) *InverterNode {
   return n
 }
 
+// Runs the child and always returns the same status
+type WrapConstantNode struct {
+  BasicNode
+  Decorator
+}
+
+func (n *WrapConstantNode) Update() {
+  Tick(n.child)
+}
+
+func NewWrapConstantNode(status Status, child Node) *WrapConstantNode {
+  n := new(WrapConstantNode)
+  n.child = child
+  n.status = status
+  return n
+}
+
 // Runs the child until limit is reached
 type RepeaterNode struct {
   BasicNode
@@ -109,6 +126,7 @@ type TimeoutNode struct {
   Decorator
   timeout time.Duration
   tchan <-chan time.Time
+  completion Status
 }
 
 func (n *TimeoutNode) Initiate() {
@@ -118,15 +136,16 @@ func (n *TimeoutNode) Initiate() {
 func (n *TimeoutNode) Update() {
   select {
   case <-n.tchan:
-    n.status = Failure
+    n.status = n.completion
   default:
     n.status = Tick(n.child)
   }
 }
 
-func NewTimeoutNode(child Node, timeout time.Duration) *TimeoutNode {
+func NewTimeoutNode(timeout time.Duration, completion Status, child Node) *TimeoutNode {
   n := new(TimeoutNode)
   n.child = child
   n.timeout = timeout
+  n.completion = completion
   return n
 }

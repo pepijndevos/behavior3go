@@ -90,6 +90,17 @@ func TestParallel(t *testing.T) {
   expectSequence(t, n, expected)
 }
 
+func TestParallelMemory(t *testing.T) {
+  ch := []Node{
+    NewArrayLeafNode(t, "mempar 1", []Status{Success, Failure}),
+    NewArrayLeafNode(t, "mempar 2", []Status{Running, Running, Success}),
+  }
+  n := NewParallelMemoryNodeAll(ch, true, false)
+
+  expected := []Status{Running, Running, Success, Failure, Running, Success}
+  expectSequence(t, n, expected)
+}
+
 func TestSequentialMemory(t *testing.T) {
   seq := []Status{Running, Success, Failure}
   ch := []Node{
@@ -121,6 +132,13 @@ func TestInverter(t *testing.T) {
   expectSequence(t, n, expected)
 }
 
+func TestConstantWrap(t *testing.T) {
+  seq := []Status{Failure}
+  n := NewWrapConstantNode(Success, NewArrayLeafNode(t, "const", seq))
+  expected := []Status{Success, Success}
+  expectSequence(t, n, expected)
+}
+
 func TestRepeater(t *testing.T) {
   seq := []Status{Success}
   n := NewRepeaterNode(2, NewArrayLeafNode(t, "rep", seq))
@@ -144,7 +162,7 @@ func TestUntilFailure(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
   seq := []Status{Running}
-  n := NewTimeoutNode(NewArrayLeafNode(t, "tout", seq), time.Millisecond)
+  n := NewTimeoutNode(time.Millisecond, Failure, NewArrayLeafNode(t, "tout", seq))
   expected := []Status{Running, Running}
   expectSequence(t, n, expected)
   time.Sleep(time.Millisecond)
