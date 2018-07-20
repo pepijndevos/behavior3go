@@ -2,8 +2,15 @@ package behaviortree
 
 import (
   "testing"
+  "log"
+  "io/ioutil"
   "time"
 )
+
+// Disable logging
+func init() {
+  log.SetOutput(ioutil.Discard)
+}
 
 // A debugging node that returns a fixed sequence of statusses
 // Also print its name and status when updated
@@ -69,6 +76,24 @@ func TestPanic(t *testing.T) {
 func TestArrayLeaf(t *testing.T) {
   seq := []Status{Running, Success, Failure}
   n := NewArrayLeafNode(t, "name", seq)
+  expectSequence(t, n, seq)
+}
+
+func TestGoroutineLeaf(t *testing.T) {
+  n := NewGoroutineLeafNode(func(ticks <-chan struct{}, status chan<- Status) {
+    i := 0
+    for range ticks {
+      t.Logf("go %d\n", i)
+      if i < 2 {
+        status <- Running
+      } else {
+        status <- Success
+        close(status)
+      }
+      i++
+    }
+  })
+  seq := []Status{Running, Running, Success}
   expectSequence(t, n, seq)
 }
 
