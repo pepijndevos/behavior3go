@@ -55,7 +55,7 @@ func MakeNode(root string, nodes map[string]ProjectNode) (Node, bool) {
     return fn(node, nodes), true
   } else {
     fmt.Printf("No constructor for %s\n", node.Name)
-    return NewConstantNode(Failure), false
+    return nil, false //NewConstantNode(Failure), false
   }
 }
 
@@ -98,10 +98,15 @@ func init() {
     for idx, child := range root.Children {
       children[idx], _ = MakeNode(child, nodes)
     }
-    // This WILL panic if you don't set bounds
-    minSuccess := int(root.Properties["minSuccess"].(float64))
-    minFail    := int(root.Properties["minFail"].(float64))
-    return NewParallelNodeBounded(children, minSuccess, minFail)
+    succ, ok1 := root.Properties["minSuccess"]
+    fail, ok2 := root.Properties["minFail"]
+    if ok1 && ok2 {
+      minSuccess := int(succ.(float64))
+      minFail    := int(fail.(float64))
+      return NewParallelNodeBounded(children, minSuccess, minFail)
+    } else {
+      return NewParallelNodeAll(children, true, false)
+    }
   }
 
   NodeTypeRegister["ParallelTactic"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
@@ -109,10 +114,15 @@ func init() {
     for idx, child := range root.Children {
       children[idx], _ = MakeNode(child, nodes)
     }
-    // This WILL panic if you don't set bounds
-    minSuccess := int(root.Properties["minSuccess"].(float64))
-    minFail    := int(root.Properties["minFail"].(float64))
-    return NewParallelMemoryNodeBounded(children, minSuccess, minFail)
+    succ, ok1 := root.Properties["minSuccess"]
+    fail, ok2 := root.Properties["minFail"]
+    if ok1 && ok2 {
+      minSuccess := int(succ.(float64))
+      minFail    := int(fail.(float64))
+      return NewParallelMemoryNodeBounded(children, minSuccess, minFail)
+    } else {
+      return NewParallelMemoryNodeAll(children, true, false)
+    }
   }
 
   // Decorator nodes
