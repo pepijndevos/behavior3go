@@ -1,5 +1,10 @@
 package behaviortree
 
+import (
+  "log"
+  "runtime/debug"
+)
+
 // Represents the status of a node
 // can be one of Succes, Failure, Running
 type Status int
@@ -37,7 +42,13 @@ type Node interface {
 
 // Calls Update on the node
 // Also calls Initiate and Terminate when appropriate
-func Tick(node Node) Status {
+func Tick(node Node) (status Status) {
+  defer func() {
+    if err := recover(); err != nil {
+      log.Printf("Error: %v\n%s", err, debug.Stack())
+      status = Failure
+    }
+  }()
   if node.Status() != Running {
     node.Initiate()
   }

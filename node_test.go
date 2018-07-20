@@ -31,6 +31,15 @@ func NewArrayLeafNode(t *testing.T, name string, statuses []Status) *ArrayLeafNo
   return n
 }
 
+type PanicNode struct {
+  BasicNode
+}
+
+func (n *PanicNode) Update() {
+  panic("welp")
+}
+
+
 func expectSequence(t *testing.T, node Node, statuses[]Status) {
   for idx, status := range statuses {
     t.Logf("---- tick ----")
@@ -45,6 +54,14 @@ func TestConstant(t *testing.T) {
   n := NewConstantNode(Success)
   status := Tick(*n)
   if status != Success {
+    t.Errorf("Status is %s", status)
+  }
+}
+
+func TestPanic(t *testing.T) {
+  n := new(PanicNode)
+  status := Tick(n)
+  if status != Failure {
     t.Errorf("Status is %s", status)
   }
 }
