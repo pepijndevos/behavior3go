@@ -21,6 +21,7 @@ type Project struct {
 type ProjectNode struct {
   Id string
   Name string
+  Title string
   Properties map[string]interface{}
   Child string
   Children []string
@@ -143,8 +144,11 @@ func init() {
 
   NodeTypeRegister["Repeat"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {
     child, _ := MakeNode(root.Child, nodes)
-    //TODO extract limit if provided
-    return NewRepeaterNode(-1, child)
+    limit := -1
+    if limitProp, ok := root.Properties["limit"]; ok {
+      limit = int(limitProp.(float64))
+    }
+    return NewRepeaterNode(limit, child)
   }
 
   NodeTypeRegister["RepeatUntilSuccess"] = func(root ProjectNode, nodes map[string]ProjectNode)Node {

@@ -12,9 +12,9 @@ type Status int
 func (s Status) String() string {
   switch s {
   case 0:
-    return "Success"
-  case 1:
     return "Failure"
+  case 1:
+    return "Success"
   case 2:
     return "Running"
   default:
@@ -23,8 +23,8 @@ func (s Status) String() string {
 }
 
 const (
-  Success Status = iota
-  Failure
+  Failure Status = iota
+  Success
   Running
 )
 
