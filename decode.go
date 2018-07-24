@@ -104,9 +104,9 @@ func init() {
     if ok1 && ok2 {
       minSuccess := int(succ.(float64))
       minFail    := int(fail.(float64))
-      return NewParallelNodeBounded(children, minSuccess, minFail)
+      return NewParallelNodeBounded(minSuccess, minFail, children)
     } else {
-      return NewParallelNodeAll(children, true, false)
+      return NewParallelNodeAll(true, false, children)
     }
   }
 
@@ -120,9 +120,9 @@ func init() {
     if ok1 && ok2 {
       minSuccess := int(succ.(float64))
       minFail    := int(fail.(float64))
-      return NewParallelMemoryNodeBounded(children, minSuccess, minFail)
+      return NewParallelMemoryNodeBounded(minSuccess, minFail, children)
     } else {
-      return NewParallelMemoryNodeAll(children, true, false)
+      return NewParallelMemoryNodeAll(true, false, children)
     }
   }
 

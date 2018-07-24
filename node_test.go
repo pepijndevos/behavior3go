@@ -23,10 +23,11 @@ type ArrayLeafNode struct {
   Counter int
 }
 
-func (n *ArrayLeafNode) Update() {
+func (n *ArrayLeafNode) Update(state interface{}, messages []interface{}) []interface{} {
   n.Status = n.Statuses[n.Counter%len(n.Statuses)]
   n.t.Logf("%s: %s", n.Name, n.Status)
   n.Counter++
+  return messages
 }
 
 // Creat a new ArrayLeafNode with a given name
@@ -43,7 +44,7 @@ type PanicNode struct {
   BasicNode
 }
 
-func (n *PanicNode) Update() {
+func (n *PanicNode) Update(state interface{}, messages []interface{}) []interface{} {
   panic("welp")
 }
 
@@ -51,7 +52,7 @@ func (n *PanicNode) Update() {
 func expectSequence(t *testing.T, node Node, statuses[]Status) {
   for idx, status := range statuses {
     t.Logf("---- tick ----")
-    result := Tick(node)
+    result, _ := Tick(node, nil, nil)
     if status != result {
       t.Errorf("Status is %s, expected %s at index %d", result, status, idx)
     }
@@ -60,7 +61,7 @@ func expectSequence(t *testing.T, node Node, statuses[]Status) {
 
 func TestConstant(t *testing.T) {
   n := NewConstantNode(Success)
-  status := Tick(*n)
+  status, _ := Tick(*n, nil, nil)
   if status != Success {
     t.Errorf("Status is %s", status)
   }
@@ -68,7 +69,7 @@ func TestConstant(t *testing.T) {
 
 func TestPanic(t *testing.T) {
   n := new(PanicNode)
-  status := Tick(n)
+  status, _ := Tick(n, nil, nil)
   if status != Failure {
     t.Errorf("Status is %s", status)
   }
@@ -81,7 +82,7 @@ func TestArrayLeaf(t *testing.T) {
 }
 
 func TestGoroutineLeaf(t *testing.T) {
-  n := NewGoroutineLeafNode(func(ticks <-chan struct{}, status chan<- Status) {
+  n := NewGoroutineLeafNode(func(ticks <-chan interface{}, status chan<- Status) {
     i := 0
     for range ticks {
       t.Logf("go %d\n", i)
@@ -127,7 +128,7 @@ func TestParallel(t *testing.T) {
     NewArrayLeafNode(t, "par 1", []Status{Success, Failure}),
     NewArrayLeafNode(t, "par 2", []Status{Running, Success, Failure}),
   }
-  n := NewParallelNodeAll(ch, true, false)
+  n := NewParallelNodeAll(true, false, ch)
 
   expected := []Status{Running, Failure, Failure, Failure, Success}
   expectSequence(t, n, expected)
@@ -138,7 +139,7 @@ func TestParallelMemory(t *testing.T) {
     NewArrayLeafNode(t, "mempar 1", []Status{Success, Failure}),
     NewArrayLeafNode(t, "mempar 2", []Status{Running, Running, Success}),
   }
-  n := NewParallelMemoryNodeAll(ch, true, false)
+  n := NewParallelMemoryNodeAll(true, false, ch)
 
   expected := []Status{Running, Running, Success, Failure, Running, Success}
   expectSequence(t, n, expected)

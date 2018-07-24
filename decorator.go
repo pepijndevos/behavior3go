@@ -15,8 +15,8 @@ type InverterNode struct {
   Decorator
 }
 
-func (n *InverterNode) Update() {
-  status := Tick(n.Child)
+func (n *InverterNode) Update(state interface{}, messages []interface{}) []interface{} {
+  status, messages := Tick(n.Child, state, messages)
   switch status {
   case Success:
     n.Status = Failure
@@ -25,6 +25,7 @@ func (n *InverterNode) Update() {
   default:
     n.Status = status
   }
+  return messages
 }
 
 func NewInverterNode(child Node) *InverterNode {
@@ -39,8 +40,9 @@ type WrapConstantNode struct {
   Decorator
 }
 
-func (n *WrapConstantNode) Update() {
-  Tick(n.Child)
+func (n *WrapConstantNode) Update(state interface{}, messages []interface{}) []interface{} {
+  _, messages = Tick(n.Child, state, messages)
+  return messages
 }
 
 func NewWrapConstantNode(status Status, child Node) *WrapConstantNode {
@@ -62,8 +64,8 @@ func (n *RepeaterNode) Initiate() {
   n.Counter = 0
 }
 
-func (n *RepeaterNode) Update() {
-  status := Tick(n.Child)
+func (n *RepeaterNode) Update(state interface{}, messages []interface{}) []interface{} {
+  status, messages := Tick(n.Child, state, messages)
   if status != Running {
     n.Counter++
   }
@@ -72,6 +74,7 @@ func (n *RepeaterNode) Update() {
   } else {
     n.Status = status
   }
+  return messages
 }
 
 func NewRepeaterNode(limit int, child Node) *RepeaterNode {
@@ -88,13 +91,14 @@ type RepeatUntilNode struct {
   Until Status
 }
 
-func (n *RepeatUntilNode) Update() {
-  status := Tick(n.Child)
+func (n *RepeatUntilNode) Update(state interface{}, messages []interface{}) []interface{} {
+  status, messages := Tick(n.Child, state, messages)
   if status == n.Until {
     n.Status = Success
   } else {
     n.Status = Running
   }
+  return messages
 }
 
 func NewRepeatUntilNode(until Status, child Node) *RepeatUntilNode {
@@ -116,13 +120,14 @@ func (n *TimeoutNode) Initiate() {
   n.tchan = time.After(n.Timeout)
 }
 
-func (n *TimeoutNode) Update() {
+func (n *TimeoutNode) Update(state interface{}, messages []interface{}) []interface{} {
   select {
   case <-n.tchan:
     n.Status = n.Completion
   default:
-    n.Status = Tick(n.Child)
+    n.Status, messages = Tick(n.Child, state, messages)
   }
+  return messages
 }
 
 func NewTimeoutNode(timeout time.Duration, completion Status, child Node) *TimeoutNode {

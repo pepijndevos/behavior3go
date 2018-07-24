@@ -12,16 +12,17 @@ func (n *CompositeNode) Terminate() {
 }
 
 // Generic function for (memory) sequential an selector nodes
-func compositeUpdate(n *CompositeNode, currentIndex int, endCondition Status) (Status, int) {
+func compositeUpdate(n *CompositeNode, state interface{}, messages []interface{}, currentIndex int, endCondition Status) (Status, []interface{}, int) {
   for ; currentIndex<len(n.Children); currentIndex++ {
-    status := Tick(n.Children[currentIndex])
+    var status Status
+    status, messages = Tick(n.Children[currentIndex], state, messages)
     if status == endCondition {
       continue
     } else {
-      return status, currentIndex
+      return status, messages, currentIndex
     }
   }
-  return endCondition, currentIndex
+  return endCondition, messages, currentIndex
 }
 
 // A node that finds the first successfull child
@@ -29,8 +30,9 @@ type SelectorNode struct {
   CompositeNode
 }
 
-func (n *SelectorNode) Update() {
-  n.Status, _ = compositeUpdate(&n.CompositeNode, 0, Failure)
+func (n *SelectorNode) Update(state interface{}, messages []interface{}) []interface{} {
+  n.Status, messages, _ = compositeUpdate(&n.CompositeNode, state, messages, 0, Failure)
+  return messages
 }
 
 // Create a new selector node with the given children
@@ -45,8 +47,9 @@ type SequentialNode struct {
   CompositeNode
 }
 
-func (n *SequentialNode) Update() {
-  n.Status, _ = compositeUpdate(&n.CompositeNode, 0, Success)
+func (n *SequentialNode) Update(state interface{}, messages []interface{}) []interface{} {
+  n.Status, messages, _ = compositeUpdate(&n.CompositeNode, state, messages, 0, Success)
+  return messages
 }
 
 // Create a new sequential node with the given children
@@ -65,11 +68,12 @@ type ParallelNode struct {
   MinimumFailures int
 }
 
-func (n *ParallelNode) Update() {
+func (n *ParallelNode) Update(state interface{}, messages []interface{}) []interface{} {
   totalFailures := 0
   totalSuccesses := 0
   for _, child := range n.Children {
-    status := Tick(child)
+    var status Status
+    status, messages = Tick(child, state, messages)
     if status == Success {
       totalSuccesses++
     } else if status == Failure {
@@ -83,11 +87,12 @@ func (n *ParallelNode) Update() {
   } else {
     n.Status = Running
   }
+  return messages
 }
 
 // Create a new parallel node with the given children
 // minSucc and minFail set the boundaries for success/failure of this node
-func NewParallelNodeBounded(children[]Node, minSucc int, minFail int) *ParallelNode{
+func NewParallelNodeBounded(minSucc int, minFail int, children[]Node) *ParallelNode{
   n := new(ParallelNode)
   n.Children = children
   n.MinimumSuccesses = minSucc
@@ -97,7 +102,7 @@ func NewParallelNodeBounded(children[]Node, minSucc int, minFail int) *ParallelN
 
 // Create a new parallel node with the given children
 // success or failure is either triggered by one or all nodes
-func NewParallelNodeAll(children[]Node, successOnAll bool, failOnAll bool) *ParallelNode{
+func NewParallelNodeAll(successOnAll bool, failOnAll bool, children[]Node) *ParallelNode{
   n := new(ParallelNode)
   n.Children = children
   if successOnAll {
@@ -132,10 +137,11 @@ func (n *ParallelMemoryNode) Initiate() {
   n.TotalSuccesses = 0
 }
 
-func (n *ParallelMemoryNode) Update() {
+func (n *ParallelMemoryNode) Update(state interface{}, messages []interface{}) []interface{} {
   for i, child := range n.Children {
     if !n.Completed[i] {
-      status := Tick(child)
+      var status Status
+      status, messages = Tick(child, state, messages)
       if status != Running {
         n.Completed[i] = true
       }
@@ -153,11 +159,12 @@ func (n *ParallelMemoryNode) Update() {
   } else {
     n.Status = Running
   }
+  return messages
 }
 
 // Create a new parallel node with the given children
 // minSucc and minFail set the boundaries for success/failure of this node
-func NewParallelMemoryNodeBounded(children[]Node, minSucc int, minFail int) *ParallelMemoryNode{
+func NewParallelMemoryNodeBounded(minSucc int, minFail int, children[]Node) *ParallelMemoryNode{
   n := new(ParallelMemoryNode)
   n.Children = children
   n.Completed = make([]bool, len(children))
@@ -168,7 +175,7 @@ func NewParallelMemoryNodeBounded(children[]Node, minSucc int, minFail int) *Par
 
 // Create a new parallel node with the given children
 // success or failure is either triggered by one or all nodes
-func NewParallelMemoryNodeAll(children[]Node, successOnAll bool, failOnAll bool) *ParallelMemoryNode{
+func NewParallelMemoryNodeAll(successOnAll bool, failOnAll bool, children[]Node) *ParallelMemoryNode{
   n := new(ParallelMemoryNode)
   n.Children = children
   n.Completed = make([]bool, len(children))
@@ -198,8 +205,11 @@ type SequentialMemoryNode struct {
   MemoryNode
 }
 
-func (n *SequentialMemoryNode) Update() {
-  n.Status, n.CurrentIndex = compositeUpdate(&n.CompositeNode, n.CurrentIndex, Success)
+func (n *SequentialMemoryNode) Update(state interface{}, messages []interface{}) []interface{} {
+  n.Status, messages, n.CurrentIndex = compositeUpdate(
+    &n.CompositeNode, state, messages, n.CurrentIndex, Success,
+  )
+  return messages
 }
 
 // Create a new sequential memory node with the given children
@@ -215,8 +225,11 @@ type SelectorMemoryNode struct {
   MemoryNode
 }
 
-func (n *SelectorMemoryNode) Update() {
-  n.Status, n.CurrentIndex = compositeUpdate(&n.CompositeNode, n.CurrentIndex, Failure)
+func (n *SelectorMemoryNode) Update(state interface{}, messages []interface{}) []interface{} {
+  n.Status, messages, n.CurrentIndex = compositeUpdate(
+    &n.CompositeNode, state, messages, n.CurrentIndex, Failure,
+  )
+  return messages
 }
 
 // Create a new selector node with the given children

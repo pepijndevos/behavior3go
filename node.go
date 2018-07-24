@@ -33,7 +33,7 @@ type Node interface {
   // Called when transitioning to Running
   Initiate()
   // Called every tick
-  Update()
+  Update(state interface{}, messages []interface{}) []interface{}
   // Called when transitioning from Running
   Terminate()
   // Get the current status
@@ -42,23 +42,26 @@ type Node interface {
 
 // Calls Update on the node
 // Also calls Initiate and Terminate when appropriate
-func Tick(node Node) (status Status) {
+func Tick(node Node, state interface{}, messages []interface{}) (status Status, newMessages []interface{}) {
   defer func() {
     if err := recover(); err != nil {
       log.Printf("Error: %v\n%s", err, debug.Stack())
       status = Failure
+      newMessages = messages
     }
   }()
+
   if node.GetStatus() != Running {
     node.Initiate()
   }
 
-  node.Update()
+  newMessages = node.Update(state, messages)
+  status = node.GetStatus()
 
-  if node.GetStatus() != Running {
+  if status != Running {
     node.Terminate()
   }
-  return node.GetStatus()
+  return
 }
 
 // A basic node with a status
@@ -67,7 +70,7 @@ type BasicNode struct {
 }
 
 func (n BasicNode) Initiate() {}
-func (n BasicNode) Update() {}
+func (n BasicNode) Update(state interface{}, messages []interface{}) []interface{} { return messages }
 func (n BasicNode) Terminate() {}
 func (n BasicNode) GetStatus() Status { return n.Status }
 
