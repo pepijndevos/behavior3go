@@ -37,7 +37,7 @@ type Node interface {
   // Called when transitioning from Running
   Terminate()
   // Get the current status
-  Status() Status
+  GetStatus() Status
 }
 
 // Calls Update on the node
@@ -49,31 +49,31 @@ func Tick(node Node) (status Status) {
       status = Failure
     }
   }()
-  if node.Status() != Running {
+  if node.GetStatus() != Running {
     node.Initiate()
   }
 
   node.Update()
 
-  if node.Status() != Running {
+  if node.GetStatus() != Running {
     node.Terminate()
   }
-  return node.Status()
+  return node.GetStatus()
 }
 
 // A basic node with a status
 type BasicNode struct {
-  status Status
+  Status Status
 }
 
 func (n BasicNode) Initiate() {}
 func (n BasicNode) Update() {}
 func (n BasicNode) Terminate() {}
-func (n BasicNode) Status() Status { return n.status }
+func (n BasicNode) GetStatus() Status { return n.Status }
 
 // Create a new node that always returns the same status
 func NewConstantNode(status Status) *BasicNode {
   n := new(BasicNode)
-  n.status = status
+  n.Status = status
   return n
 }

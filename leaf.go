@@ -18,7 +18,7 @@ func (n *GoroutineLeafNode) Initiate() {
 
 func (n *GoroutineLeafNode) Update() {
   n.tickChannel <- struct{}{}
-  n.status = <-n.statusChannel
+  n.Status = <-n.statusChannel
 }
 
 func (n *GoroutineLeafNode) Terminate() {

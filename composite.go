@@ -2,19 +2,19 @@ package behaviortree
 
 type CompositeNode struct {
   BasicNode
-  children []Node
+  Children []Node
 }
 
 func (n *CompositeNode) Terminate() {
-  for _, child := range n.children {
+  for _, child := range n.Children {
     child.Terminate()
   }
 }
 
 // Generic function for (memory) sequential an selector nodes
 func compositeUpdate(n *CompositeNode, currentIndex int, endCondition Status) (Status, int) {
-  for ; currentIndex<len(n.children); currentIndex++ {
-    status := Tick(n.children[currentIndex])
+  for ; currentIndex<len(n.Children); currentIndex++ {
+    status := Tick(n.Children[currentIndex])
     if status == endCondition {
       continue
     } else {
@@ -30,13 +30,13 @@ type SelectorNode struct {
 }
 
 func (n *SelectorNode) Update() {
-  n.status, _ = compositeUpdate(&n.CompositeNode, 0, Failure)
+  n.Status, _ = compositeUpdate(&n.CompositeNode, 0, Failure)
 }
 
 // Create a new selector node with the given children
 func NewSelectorNode(children[]Node) *SelectorNode{
   n := new(SelectorNode)
-  n.children = children
+  n.Children = children
   return n
 }
 
@@ -46,13 +46,13 @@ type SequentialNode struct {
 }
 
 func (n *SequentialNode) Update() {
-  n.status, _ = compositeUpdate(&n.CompositeNode, 0, Success)
+  n.Status, _ = compositeUpdate(&n.CompositeNode, 0, Success)
 }
 
 // Create a new sequential node with the given children
 func NewSequentialNode(children[]Node) *SequentialNode{
   n := new(SequentialNode)
-  n.children = children
+  n.Children = children
   return n
 }
 
@@ -61,14 +61,14 @@ func NewSequentialNode(children[]Node) *SequentialNode{
 // the number of children that fail or succeed
 type ParallelNode struct {
   CompositeNode
-  minimumSuccesses int
-  minimumFailures int
+  MinimumSuccesses int
+  MinimumFailures int
 }
 
 func (n *ParallelNode) Update() {
   totalFailures := 0
   totalSuccesses := 0
-  for _, child := range n.children {
+  for _, child := range n.Children {
     status := Tick(child)
     if status == Success {
       totalSuccesses++
@@ -76,12 +76,12 @@ func (n *ParallelNode) Update() {
       totalFailures++
     }
   }
-  if totalSuccesses >= n.minimumSuccesses {
-    n.status = Success;
-  } else if totalFailures >= n.minimumFailures {
-    n.status = Failure;
+  if totalSuccesses >= n.MinimumSuccesses {
+    n.Status = Success;
+  } else if totalFailures >= n.MinimumFailures {
+    n.Status = Failure;
   } else {
-    n.status = Running
+    n.Status = Running
   }
 }
 
@@ -89,9 +89,9 @@ func (n *ParallelNode) Update() {
 // minSucc and minFail set the boundaries for success/failure of this node
 func NewParallelNodeBounded(children[]Node, minSucc int, minFail int) *ParallelNode{
   n := new(ParallelNode)
-  n.children = children
-  n.minimumSuccesses = minSucc
-  n.minimumFailures = minFail
+  n.Children = children
+  n.MinimumSuccesses = minSucc
+  n.MinimumFailures = minFail
   return n
 }
 
@@ -99,16 +99,16 @@ func NewParallelNodeBounded(children[]Node, minSucc int, minFail int) *ParallelN
 // success or failure is either triggered by one or all nodes
 func NewParallelNodeAll(children[]Node, successOnAll bool, failOnAll bool) *ParallelNode{
   n := new(ParallelNode)
-  n.children = children
+  n.Children = children
   if successOnAll {
-    n.minimumSuccesses = len(children)
+    n.MinimumSuccesses = len(children)
   } else {
-    n.minimumSuccesses = 1
+    n.MinimumSuccesses = 1
   }
   if failOnAll {
-    n.minimumFailures = len(children)
+    n.MinimumFailures = len(children)
   } else {
-    n.minimumFailures = 1
+    n.MinimumFailures = 1
   }
   return n
 }
@@ -119,39 +119,39 @@ func NewParallelNodeAll(children[]Node, successOnAll bool, failOnAll bool) *Para
 // the number of children that fail or succeed
 type ParallelMemoryNode struct {
   ParallelNode
-  completed []bool
-  totalFailures int
-  totalSuccesses int
+  Completed []bool
+  TotalFailures int
+  TotalSuccesses int
 }
 
 func (n *ParallelMemoryNode) Initiate() {
-  for i := range n.completed {
-    n.completed[i] = false
+  for i := range n.Completed {
+    n.Completed[i] = false
   }
-  n.totalFailures = 0
-  n.totalSuccesses = 0
+  n.TotalFailures = 0
+  n.TotalSuccesses = 0
 }
 
 func (n *ParallelMemoryNode) Update() {
-  for i, child := range n.children {
-    if !n.completed[i] {
+  for i, child := range n.Children {
+    if !n.Completed[i] {
       status := Tick(child)
       if status != Running {
-        n.completed[i] = true
+        n.Completed[i] = true
       }
       if status == Success {
-        n.totalSuccesses++
+        n.TotalSuccesses++
       } else if status == Failure {
-        n.totalFailures++
+        n.TotalFailures++
       }
     }
   }
-  if n.totalSuccesses >= n.minimumSuccesses {
-    n.status = Success;
-  } else if n.totalFailures >= n.minimumFailures {
-    n.status = Failure;
+  if n.TotalSuccesses >= n.MinimumSuccesses {
+    n.Status = Success;
+  } else if n.TotalFailures >= n.MinimumFailures {
+    n.Status = Failure;
   } else {
-    n.status = Running
+    n.Status = Running
   }
 }
 
@@ -159,10 +159,10 @@ func (n *ParallelMemoryNode) Update() {
 // minSucc and minFail set the boundaries for success/failure of this node
 func NewParallelMemoryNodeBounded(children[]Node, minSucc int, minFail int) *ParallelMemoryNode{
   n := new(ParallelMemoryNode)
-  n.children = children
-  n.completed = make([]bool, len(children))
-  n.minimumSuccesses = minSucc
-  n.minimumFailures = minFail
+  n.Children = children
+  n.Completed = make([]bool, len(children))
+  n.MinimumSuccesses = minSucc
+  n.MinimumFailures = minFail
   return n
 }
 
@@ -170,26 +170,26 @@ func NewParallelMemoryNodeBounded(children[]Node, minSucc int, minFail int) *Par
 // success or failure is either triggered by one or all nodes
 func NewParallelMemoryNodeAll(children[]Node, successOnAll bool, failOnAll bool) *ParallelMemoryNode{
   n := new(ParallelMemoryNode)
-  n.children = children
-  n.completed = make([]bool, len(children))
+  n.Children = children
+  n.Completed = make([]bool, len(children))
   if successOnAll {
-    n.minimumSuccesses = len(children)
+    n.MinimumSuccesses = len(children)
   } else {
-    n.minimumSuccesses = 1
+    n.MinimumSuccesses = 1
   }
   if failOnAll {
-    n.minimumFailures = len(children)
+    n.MinimumFailures = len(children)
   } else {
-    n.minimumFailures = 1
+    n.MinimumFailures = 1
   }
   return n
 }
 type MemoryNode struct {
-  currentIndex int
+  CurrentIndex int
 }
 
 func (n *MemoryNode) Initiate() {
-  n.currentIndex = 0
+  n.CurrentIndex = 0
 }
 
 // Like SequentialNode, but remembers its position
@@ -199,13 +199,13 @@ type SequentialMemoryNode struct {
 }
 
 func (n *SequentialMemoryNode) Update() {
-  n.status, n.currentIndex = compositeUpdate(&n.CompositeNode, n.currentIndex, Success)
+  n.Status, n.CurrentIndex = compositeUpdate(&n.CompositeNode, n.CurrentIndex, Success)
 }
 
 // Create a new sequential memory node with the given children
 func NewSequentialMemoryNode(children[]Node) *SequentialMemoryNode{
   n := new(SequentialMemoryNode)
-  n.children = children
+  n.Children = children
   return n
 }
 
@@ -216,13 +216,13 @@ type SelectorMemoryNode struct {
 }
 
 func (n *SelectorMemoryNode) Update() {
-  n.status, n.currentIndex = compositeUpdate(&n.CompositeNode, n.currentIndex, Failure)
+  n.Status, n.CurrentIndex = compositeUpdate(&n.CompositeNode, n.CurrentIndex, Failure)
 }
 
 // Create a new selector node with the given children
 func NewSelectorMemoryNode(children[]Node) *SelectorMemoryNode{
   n := new(SelectorMemoryNode)
-  n.children = children
+  n.Children = children
   return n
 }
 

@@ -3,7 +3,7 @@ package behaviortree
 import "time"
 
 type Decorator struct {
-  child Node
+  Child Node
 }
 
 // A node that turns failure into success
@@ -16,20 +16,20 @@ type InverterNode struct {
 }
 
 func (n *InverterNode) Update() {
-  status := Tick(n.child)
+  status := Tick(n.Child)
   switch status {
   case Success:
-    n.status = Failure
+    n.Status = Failure
   case Failure:
-    n.status = Success
+    n.Status = Success
   default:
-    n.status = status
+    n.Status = status
   }
 }
 
 func NewInverterNode(child Node) *InverterNode {
   n := new(InverterNode)
-  n.child = child
+  n.Child = child
   return n
 }
 
@@ -40,13 +40,13 @@ type WrapConstantNode struct {
 }
 
 func (n *WrapConstantNode) Update() {
-  Tick(n.child)
+  Tick(n.Child)
 }
 
 func NewWrapConstantNode(status Status, child Node) *WrapConstantNode {
   n := new(WrapConstantNode)
-  n.child = child
-  n.status = status
+  n.Child = child
+  n.Status = status
   return n
 }
 
@@ -54,30 +54,30 @@ func NewWrapConstantNode(status Status, child Node) *WrapConstantNode {
 type RepeaterNode struct {
   BasicNode
   Decorator
-  counter int
-  limit int
+  Counter int
+  Limit int
 }
 
 func (n *RepeaterNode) Initiate() {
-  n.counter = 0
+  n.Counter = 0
 }
 
 func (n *RepeaterNode) Update() {
-  status := Tick(n.child)
+  status := Tick(n.Child)
   if status != Running {
-    n.counter++
+    n.Counter++
   }
-  if n.limit < 1 || n.counter < n.limit {
-    n.status = Running
+  if n.Limit < 1 || n.Counter < n.Limit {
+    n.Status = Running
   } else {
-    n.status = status
+    n.Status = status
   }
 }
 
 func NewRepeaterNode(limit int, child Node) *RepeaterNode {
   n := new(RepeaterNode)
-  n.child = child
-  n.limit = limit
+  n.Child = child
+  n.Limit = limit
   return n
 }
 
@@ -85,50 +85,50 @@ func NewRepeaterNode(limit int, child Node) *RepeaterNode {
 type RepeatUntilNode struct {
   BasicNode
   Decorator
-  until Status
+  Until Status
 }
 
 func (n *RepeatUntilNode) Update() {
-  status := Tick(n.child)
-  if status == n.until {
-    n.status = Success
+  status := Tick(n.Child)
+  if status == n.Until {
+    n.Status = Success
   } else {
-    n.status = Running
+    n.Status = Running
   }
 }
 
 func NewRepeatUntilNode(until Status, child Node) *RepeatUntilNode {
   n := new(RepeatUntilNode)
-  n.child = child
-  n.until = until
+  n.Child = child
+  n.Until = until
   return n
 }
 
 type TimeoutNode struct {
   BasicNode
   Decorator
-  timeout time.Duration
+  Timeout time.Duration
   tchan <-chan time.Time
-  completion Status
+  Completion Status
 }
 
 func (n *TimeoutNode) Initiate() {
-  n.tchan = time.After(n.timeout)
+  n.tchan = time.After(n.Timeout)
 }
 
 func (n *TimeoutNode) Update() {
   select {
   case <-n.tchan:
-    n.status = n.completion
+    n.Status = n.Completion
   default:
-    n.status = Tick(n.child)
+    n.Status = Tick(n.Child)
   }
 }
 
 func NewTimeoutNode(timeout time.Duration, completion Status, child Node) *TimeoutNode {
   n := new(TimeoutNode)
-  n.child = child
-  n.timeout = timeout
-  n.completion = completion
+  n.Child = child
+  n.Timeout = timeout
+  n.Completion = completion
   return n
 }

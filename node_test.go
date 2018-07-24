@@ -4,6 +4,7 @@ import (
   "testing"
   "log"
   "io/ioutil"
+  "encoding/json"
   "time"
 )
 
@@ -17,15 +18,15 @@ func init() {
 type ArrayLeafNode struct {
   BasicNode
   t *testing.T
-  name string
-  statuses []Status
-  counter int
+  Name string
+  Statuses []Status
+  Counter int
 }
 
 func (n *ArrayLeafNode) Update() {
-  n.status = n.statuses[n.counter%len(n.statuses)]
-  n.t.Logf("%s: %s", n.name, n.status)
-  n.counter++
+  n.Status = n.Statuses[n.Counter%len(n.Statuses)]
+  n.t.Logf("%s: %s", n.Name, n.Status)
+  n.Counter++
 }
 
 // Creat a new ArrayLeafNode with a given name
@@ -33,8 +34,8 @@ func (n *ArrayLeafNode) Update() {
 func NewArrayLeafNode(t *testing.T, name string, statuses []Status) *ArrayLeafNode {
   n := new(ArrayLeafNode)
   n.t = t
-  n.name = name
-  n.statuses = statuses
+  n.Name = name
+  n.Statuses = statuses
   return n
 }
 
@@ -210,4 +211,33 @@ func TestTimeout(t *testing.T) {
   time.Sleep(time.Millisecond)
   expected = []Status{Failure, Running}
   expectSequence(t, n, expected)
+}
+
+func TestMarshal(t *testing.T) {
+  seq := []Status{Running}
+  ch := []Node{
+    NewArrayLeafNode(t, "memseq 2", seq),
+    NewTimeoutNode(time.Millisecond, Failure, NewArrayLeafNode(t, "tout", seq)),
+  }
+  n := NewSequentialMemoryNode(ch)
+
+  b, err := json.Marshal(n)
+	if err != nil {
+    t.Errorf("Marshal failed: %s", err)
+	}
+  // Set some property in the object we just marshalled
+  cn := n.Children[0].(*ArrayLeafNode)
+  cn.Status = Success // was Failure
+  // Apparently Unmarshal is fine unmarshaling into an interface
+  // if it is backed by an existing type
+  err = json.Unmarshal(b, n)
+	if err != nil {
+    t.Errorf("Unmarshal failed: %s", err)
+	}
+  // Verify that indeed the property we set on a child
+  // is overwritten by the unmarshaled data
+  cn = n.Children[0].(*ArrayLeafNode)
+	if cn.Status != Failure {
+    t.Errorf("Unexpected status: %s", n.Status)
+	}
 }
