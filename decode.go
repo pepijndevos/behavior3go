@@ -146,7 +146,8 @@ func init() {
     child, _ := MakeNode(root.Child, nodes)
     limit := -1
     if limitProp, ok := root.Properties["limit"]; ok {
-      limit = int(limitProp.(float64))
+      limitFloat, _ := limitProp.(float64)
+      limit = int(limitFloat)
     }
     return NewRepeaterNode(limit, child)
   }

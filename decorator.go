@@ -64,13 +64,13 @@ func (n *RepeaterNode) Initiate() {
 
 func (n *RepeaterNode) Update() {
   status := Tick(n.child)
+  if status != Running {
+    n.counter++
+  }
   if n.limit < 1 || n.counter < n.limit {
     n.status = Running
   } else {
-    n.status = Success
-  }
-  if status != Running {
-    n.counter++
+    n.status = status
   }
 }
 

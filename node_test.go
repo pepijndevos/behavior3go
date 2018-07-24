@@ -182,9 +182,9 @@ func TestConstantWrap(t *testing.T) {
 }
 
 func TestRepeater(t *testing.T) {
-  seq := []Status{Success}
+  seq := []Status{Running, Failure}
   n := NewRepeaterNode(2, NewArrayLeafNode(t, "rep", seq))
-  expected := []Status{Running, Running, Success}
+  expected := []Status{Running, Running, Running, Failure}
   expectSequence(t, n, expected)
 }
 
