@@ -40,13 +40,13 @@ func ReadProject(file io.Reader) (*Project, error) {
   }
 }
 
-func MakeTrees(pr *Project) []Node {
-  trees := make([]Node, len(pr.Data.Trees))
-  for idx, tree := range pr.Data.Trees {
+// classical C-style output argument
+// -.-
+func MakeTrees(pr *Project, trees map[string]Node) {
+  for _, tree := range pr.Data.Trees {
     node, _ := MakeNode(tree.Root, tree.Nodes)
-    trees[idx] = node
+    trees[tree.Title] = node
   }
-  return trees
 }
 
 func MakeNode(root string, nodes map[string]ProjectNode) (Node, bool) {
